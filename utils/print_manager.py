@@ -48,11 +48,11 @@ class CardPrinterThread(QThread):
                 if self.is_canceled:
                     return
                 
-                base_result = draw_image(device_handle, PAGE_FRONT, PANELID_COLOR,
-                                          0, 0, 635, 1027, "gurye_base_card.jpg")
-                if base_result != 0:
-                    self.error.emit("배경 이미지 그리기 실패")
-                    return
+                # base_result = draw_image(device_handle, PAGE_FRONT, PANELID_COLOR,
+                #                           0, 0, 635, 1027, "gurye_base_card.jpg")
+                # if base_result != 0:
+                #     self.error.emit("배경 이미지 그리기 실패")
+                #     return
                     
                 # 4. 이미지 그리기
                 # 카드 크기: 58mm x 90mm (스마트 프린터 기본 설정 635px x 1027px @ 300 DPI)
@@ -113,14 +113,14 @@ class CardPrinterThread(QThread):
                     return
                 
                 # 6. 미리보기 비트맵 가져오기 (필요한 경우)
-                if self.show_preview:
-                    result, bm_info = get_preview_bitmap(device_handle, PAGE_FRONT)
-                    if result == 0:
-                        image = bitmapinfo_to_image(bm_info)
-                        if image:
-                            self.preview_ready.emit(image)
-                    else:
-                        self.error.emit("미리보기 비트맵 가져오기 실패")
+                # if self.show_preview:
+                #     result, bm_info = get_preview_bitmap(device_handle, PAGE_FRONT)
+                #     if result == 0:
+                #         image = bitmapinfo_to_image(bm_info)
+                #         if image:
+                #             self.preview_ready.emit(image)
+                #     else:
+                #         self.error.emit("미리보기 비트맵 가져오기 실패")
                         # 실패해도 계속 진행
                 
                 # 작업 취소 확인
@@ -128,12 +128,12 @@ class CardPrinterThread(QThread):
                     return
                 
                 # 7. 이미지 인쇄
-                # result = print_image(device_handle)
-                # if result != 0:
-                #     self.error.emit("이미지 인쇄 실패")
-                #     return
+                result = print_image(device_handle)
+                if result != 0:
+                    self.error.emit("이미지 인쇄 실패")
+                    return
                     
-                # self.finished.emit()
+                self.finished.emit()
             finally:
                 # 8. 장치 닫기 (항상 실행)
                 close_device(device_handle)

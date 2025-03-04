@@ -63,8 +63,8 @@ class ImagePreviewManager:
         zoom_label.setStyleSheet("color: #333; font-size: 13px;")
         
         self.zoom_slider = QSlider(Qt.Orientation.Horizontal)
-        self.zoom_slider.setRange(15, 55)
-        self.zoom_slider.setValue(24)
+        self.zoom_slider.setRange(10, 55)
+        self.zoom_slider.setValue(14)
         self.zoom_slider.setFixedWidth(200)  # 슬라이더 너비 고정
         self.zoom_slider.valueChanged.connect(self.update_preview)
         self.zoom_slider.setStyleSheet("""
@@ -233,7 +233,7 @@ class ImagePreviewManager:
     def reset(self):
         """프리뷰 상태 초기화"""
         self.rotation_angle = 0
-        self.zoom_slider.setValue(24)
+        self.zoom_slider.setValue(14)
         self.image_position = {"x": 0, "y": 0}
         self.update_preview()
     

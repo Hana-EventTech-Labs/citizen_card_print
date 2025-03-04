@@ -11,8 +11,6 @@ class PhotoScreen(QWidget):
         self.screen_size = screen_size
         self.setupUI()
 
-        
-    
     def setupUI(self):
         self.setupBackground()
         self.add_close_button()
