@@ -262,10 +262,21 @@ class InfoScreen(QWidget):
             return
         
         # 엑셀 검증 진행
-        if not self.excel_manager.validate_user(name, birth):
-            # 검증 실패 또는 사용자가 취소 선택
+        validation_result = self.excel_manager.validate_user(name, birth)
+        
+        # 검증 결과에 따른 처리
+        if validation_result == 1:
+            # 중복 사용자이고 "확인" 버튼을 눌렀을 때 - 현재 화면 유지, 발급 중단
             return
-            
+        elif validation_result == 2:
+            # "초기 화면으로 돌아가기" 버튼을 눌렀을 때
+            self.reset_form()  # 폼 초기화
+            self.keyboard_manager.hide_keyboard()  # 키보드 숨기기
+            self.stack.setCurrentIndex(0)  # 스플래시 화면으로 이동
+            return
+        
+        # 검증 통과 (신규 사용자) - 계속 진행
+        
         # 키보드 숨기기
         self.keyboard_manager.hide_keyboard()
             
@@ -294,13 +305,8 @@ class InfoScreen(QWidget):
         success = self.excel_manager.register_card(name, birth)
         
         if not success:
-            # 등록 실패 시 메시지 표시
-            dialog = MessageDialog(
-                parent=self,
-                title="등록 오류",
-                message="카드 발급 정보 등록 중 오류가 발생했습니다."
-            )
-            dialog.exec()
+            # 키보드 다시 표시 (오류 발생 시)
+            self.keyboard_manager.show_keyboard()
             return
         
         # 인쇄 작업 시작 - 이름만 전달
@@ -324,7 +330,7 @@ class InfoScreen(QWidget):
                 auto_close_ms=3000  # 3초 후 자동 닫기
             )
             dialog.exec()
- 
+            
     def on_printing_finished(self):
         """인쇄 완료 후 처리"""
         # 임시 이미지 파일 정리

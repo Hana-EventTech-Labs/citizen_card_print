@@ -23,7 +23,7 @@ class ExcelManager:
             birth_date (str): 생년월일(YYYYMMDD 형식)
             
         Returns:
-            bool: 발급 진행 가능 여부
+            int: 0 - 발급 진행 (신규 사용자), 1 - 발급 중단 (중복 사용자), 2 - 초기화면으로 돌아가기
         """
         if not name or not birth_date:
             # 이름 또는 생년월일이 누락된 경우
@@ -33,7 +33,7 @@ class ExcelManager:
                 message="이름과 생년월일을 모두 입력해주세요."
             )
             dialog.exec()
-            return False
+            return 1  # 발급 중단
             
         # 이름, 생년월일 검증
         is_duplicate, message = self.validator.is_duplicate(name, birth_date)
@@ -47,14 +47,15 @@ class ExcelManager:
                 is_warning=True
             )
             
-            # 사용자 선택에 따라 진행 여부 결정
-            if dialog.exec() == ValidationDialog.Accepted:
-                return True  # 확인 버튼 선택
+            # 사용자 선택에 따라 반환값 결정
+            result = dialog.exec()
+            if result == ValidationDialog.Accepted:
+                return 1  # 확인 버튼 선택 - 발급 중단
             else:
-                return False  # 초기 화면으로 돌아가기 버튼 선택
+                return 2  # 초기 화면으로 돌아가기 버튼 선택
         else:
             # 중복이 아닌 경우
-            return True
+            return 0  # 발급 진행
     
     def register_card(self, name, birth_date):
         """
@@ -65,8 +66,18 @@ class ExcelManager:
             birth_date (str): 생년월일(YYYYMMDD 형식)
             
         Returns:
-            bool: 등록 성공 여부
+            tuple: (성공 여부, 오류 메시지)
         """
         # 엑셀에 기록 추가
-        success = self.validator.add_record(name, birth_date)
+        success, error_message = self.validator.add_record(name, birth_date)
+        
+        # 저장 실패 시 오류 메시지 표시
+        if not success and error_message:
+            dialog = MessageDialog(
+                parent=self.parent,
+                title="데이터 저장 오류",
+                message=error_message
+            )
+            dialog.exec()
+            
         return success
