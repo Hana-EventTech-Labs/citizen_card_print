@@ -1,3 +1,5 @@
+import sys
+import os
 from pathlib import Path
 from cffi import FFI
 
@@ -121,9 +123,24 @@ int SmartComm_DrawText2(
 
 """)
 
-dll_path = Path(__file__).parent / ".." / "resources" / "SmartComm2.dll"
-lib = ffi.dlopen(str(dll_path.resolve()))
+# PyInstaller 번들 경로 처리
+if hasattr(sys, '_MEIPASS'):
+    base_path = sys._MEIPASS
+else:
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    base_path = os.path.dirname(base_path)  # printer_utils에서 한 단계 상위로
 
+dll_path = os.path.join(base_path, "resources", "SmartComm2.dll")
+print(f"DLL 경로: {dll_path}")
+print(f"DLL 파일 존재 여부: {os.path.exists(dll_path)}")
+
+try:
+    lib = ffi.dlopen(dll_path)
+    print("DLL 로드 성공")
+except Exception as e:
+    print(f"DLL 로드 실패: {e}")
+    lib = None
+    
 MAX_SMART_PRINTER = 32
 SMART_OPENDEVICE_BYID = 0
 SMART_OPENDEVICE_BYDESC = 1

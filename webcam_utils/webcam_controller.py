@@ -7,6 +7,8 @@ import time
 import sys
 import os
 
+from utils.temp_path import get_temp_path
+
 def initialize_camera(camera_index=0, width=1920, height=1080, fps=60):
     """카메라 초기화 및 최적화"""
     camera = cv2.VideoCapture(camera_index, cv2.CAP_DSHOW)
@@ -42,24 +44,17 @@ def release_camera(camera):
         camera.release()
         logging.info("카메라 해제 완료")
 
-def capture_and_save_photo(camera, save_path="resources/captured_image.jpg", x=0, y=0, width=None, height=None):
+# 파일 상단에 import 추가
+from utils.temp_path import get_temp_path
+
+# capture_and_save_photo 함수 수정
+def capture_and_save_photo(camera, save_path="captured_image.jpg", x=0, y=0, width=None, height=None):
     """현재 카메라 인스턴스를 사용하여 사진 촬영 후 저장, 특정 영역만 캡처 가능"""
     frame = get_frame(camera)
     if frame is not None:
-                 
-        # timestamp = time.strftime("%Y%m%d_%H%M%S")
-        # 파일 이름과 경로 분리
-        dir_path = os.path.dirname(save_path)
-        file_name = os.path.basename(save_path)
-        # file_name = file_name.replace(".jpg", f"_{timestamp}.jpg")
-        file_path = os.path.join(dir_path, file_name)
-        
-        # 디렉토리가 없으면 생성
-        if dir_path and not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-            
+        # 임시 경로로 저장 
+        file_path = get_temp_path(os.path.basename(save_path))
         cv2.imwrite(file_path, frame)
-        # logging.info(f"📸 사진 저장 완료: {file_path}")
         return file_path
     logging.error("사진 촬영 실패")
     return None

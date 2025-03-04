@@ -7,6 +7,7 @@ from printer_utils.cffi_defs import SMART_OPENDEVICE_BYID, PAGE_FRONT, PANELID_C
 from printer_utils.image_utils import bitmapinfo_to_image
 import os
 from PySide6.QtCore import QThread, Signal
+from utils.temp_path import get_temp_path, cleanup_temp_files
 
 class CardPrinterThread(QThread):
     """이미지와 텍스트를 함께 출력하는 프린터 스레드 클래스"""
@@ -152,21 +153,21 @@ class PrintManager:
         if not os.path.exists(image_path):
             print(f"인쇄할 이미지 파일({image_path})이 존재하지 않습니다.")
             return False
-            
+                
         image_filename = os.path.basename(image_path)
         self.printer_thread = CardPrinterThread(image_filename, name, show_preview)
         
         # 콜백 연결
         if on_finished_callback:
             self.printer_thread.finished.connect(on_finished_callback)
-            
+                
         # 에러 콜백 연결
         self.printer_thread.error.connect(self.on_print_error)
         
         # 미리보기 콜백 연결
         if show_preview:
             self.printer_thread.preview_ready.connect(self.show_preview)
-            
+                
         self.printer_thread.start()
         print(f"카드 인쇄 작업을 시작합니다: {image_filename}")
         return True
@@ -194,12 +195,6 @@ class PrintManager:
             return True
         return False
     
-    def clean_up_image_files(self, image_paths):
+    def clean_up_image_files(self, image_paths=[]):
         """인쇄 후 이미지 파일 정리"""
-        for path in image_paths:
-            if os.path.exists(path):
-                try:
-                    os.remove(path)
-                    print(f"이미지 파일 삭제 완료: {path}")
-                except Exception as e:
-                    print(f"이미지 파일 삭제 실패: {e}")
+        cleanup_temp_files()

@@ -11,6 +11,7 @@ from utils.keyboard_manager import KeyboardManager
 from utils.print_manager import PrintManager
 from utils.dialog_manager import MessageDialog
 from excel_utils.manager import ExcelManager
+from utils.temp_path import get_temp_path, cleanup_temp_files
 
 class InfoScreen(QWidget):
     """정보 입력 및 이미지 편집 화면"""
@@ -305,8 +306,13 @@ class InfoScreen(QWidget):
         success = self.excel_manager.register_card(name, birth)
         
         if not success:
-            # 키보드 다시 표시 (오류 발생 시)
-            self.keyboard_manager.show_keyboard()
+            # 등록 실패 시 메시지 표시 - 메시지 변경 및 확인 절차 추가
+            dialog = MessageDialog(
+                parent=self,
+                title="데이터 저장 오류",
+                message="발급 기록을 저장할 수 없습니다.\n\n발급기록.csv 파일이 열려있다면 닫아주세요.\n그래도 문제가 계속되면 관리자에게 문의하세요."
+            )
+            dialog.exec()
             return
         
         # 인쇄 작업 시작 - 이름만 전달
@@ -330,16 +336,14 @@ class InfoScreen(QWidget):
                 auto_close_ms=3000  # 3초 후 자동 닫기
             )
             dialog.exec()
-            
+
+    # on_printing_finished 메서드 수정
     def on_printing_finished(self):
         """인쇄 완료 후 처리"""
         # 임시 이미지 파일 정리
-        self.print_manager.clean_up_image_files([
-            "resources/cropped_preview.jpg",
-            "resources/preview_area.jpg"
-        ])
+        cleanup_temp_files()
         
-        # 원본 이미지 삭제
+        # 원본 이미지 삭제 (필요한 경우)
         try:
             if hasattr(self, 'original_image_path') and os.path.exists(self.original_image_path):
                 os.remove(self.original_image_path)

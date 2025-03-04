@@ -1,6 +1,8 @@
 from .cffi_defs import ffi, lib
 from pathlib import Path
 import ctypes
+import os
+from utils.temp_path import get_temp_path
 
 # 연결된 프린터 목록을 가져오는 함수
 def get_device_list():
@@ -23,20 +25,35 @@ def open_device(device_id, open_device_by):
     return result, device_handle[0]
 
 # 프린터에 이미지를 출력하기 위한 함수
+
+# draw_image 함수 수정
 def draw_image(device_handle, page, panel, x, y, cx, cy, image_filename):
-    # Page = 0 : 앞면, 1 : 뒷면
-    # panel = 컬러,레진,오버레이 어느 영역에 인쇄할지
-    # cx,cy는 px단위, 0인 경우 원래 크기를 사용
+    """프린터에 이미지를 출력하기 위한 함수"""
+    # 절대 경로로 제공된 경우 그대로 사용, 아니면 임시 디렉토리에서 검색
+    if os.path.isabs(image_filename) and os.path.exists(image_filename):
+        image_path = image_filename
+    else:
+        # 파일명만 있는 경우 임시 디렉토리에서 찾기
+        image_path = get_temp_path(os.path.basename(image_filename))
     
-    # 현재 파일의 경로를 기준으로 resources 폴더 내의 이미지 파일 경로 생성
-    image_path = Path(__file__).parent / ".." / "resources" / image_filename
-    image_path_str = str(image_path.resolve())
+    print(f"이미지 경로: {image_path}")
+    print(f"이미지 파일 존재 여부: {os.path.exists(image_path)}")
+    
+    if not os.path.exists(image_path):
+        print(f"오류: 이미지 파일을 찾을 수 없습니다: {image_path}")
+        return -1
+    
     # wchar_t 배열로 이미지 경로를 변환 (DLL 호출을 위해)
-    image = ffi.new("wchar_t[]", image_path_str)
+    image = ffi.new("wchar_t[]", str(image_path))
+    
     # 출력 영역 정보 저장을 위한 RECT 구조체 메모리 할당
     rect_area = ffi.new("RECT *")
+    
     # DLL의 SmartComm_DrawImage 함수를 호출하여 지정 영역에 이미지를 그림
     result = lib.SmartComm_DrawImage(device_handle, page, panel, x, y, cx, cy, image, rect_area)
+    
+    print(f"SmartComm_DrawImage 결과: {result}")
+    
     return result
 
 # 프린터에서 미리보기 비트맵 데이터를 가져오는 함수

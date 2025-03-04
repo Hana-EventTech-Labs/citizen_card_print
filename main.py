@@ -8,6 +8,7 @@ from webcam_utils.webcam_controller import WebcamViewer
 from screens.splash_screen import SplashScreen
 from screens.photo_screen import PhotoScreen
 from screens.info_screen import InfoScreen
+from utils.temp_path import cleanup_temp_files
 
 class KioskApp(QMainWindow):
     def __init__(self):
@@ -37,6 +38,7 @@ class KioskApp(QMainWindow):
         if event.key() == Qt.Key.Key_Escape:
             self.close()
             
+    # closeEvent 메서드 수정
     def closeEvent(self, event):
         """창이 닫힐 때 카메라 자원 해제 및 임시 파일 정리"""
         try:
@@ -45,17 +47,8 @@ class KioskApp(QMainWindow):
                 if hasattr(self.photo_screen.webcam, 'camera'):
                     release_camera(self.photo_screen.webcam.camera)
             
-            # 임시 이미지 파일들 삭제
-            temp_files = [
-                "resources/captured_image.jpg",
-                "resources/cropped_preview.jpg",
-                "resources/preview_area.jpg"
-            ]
-            
-            for file_path in temp_files:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    print(f"프로그램 종료 시 임시 파일 삭제: {file_path}")
+            # 모든 임시 파일 정리
+            cleanup_temp_files()
                     
         except Exception as e:
             print(f"프로그램 종료 시 정리 중 오류 발생: {e}")

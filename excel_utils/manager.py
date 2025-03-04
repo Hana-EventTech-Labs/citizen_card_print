@@ -66,18 +66,18 @@ class ExcelManager:
             birth_date (str): 생년월일(YYYYMMDD 형식)
             
         Returns:
-            tuple: (성공 여부, 오류 메시지)
+            bool: 성공 여부
         """
         # 엑셀에 기록 추가
-        success, error_message = self.validator.add_record(name, birth_date)
+        success = self.validator.add_record(name, birth_date)
         
         # 저장 실패 시 오류 메시지 표시
-        if not success and error_message:
+        if not success:
             dialog = MessageDialog(
                 parent=self.parent,
                 title="데이터 저장 오류",
-                message=error_message
+                message="데이터 저장 중 오류가 발생했습니다."
             )
             dialog.exec()
             
-        return success
+        return success  # 불리언 값만 반환

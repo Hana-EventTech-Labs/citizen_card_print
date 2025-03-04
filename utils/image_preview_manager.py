@@ -4,6 +4,7 @@ from PySide6.QtGui import QImage, QPixmap
 import cv2
 import numpy as np
 import os
+from utils.temp_path import get_temp_path
 
 class ImagePreviewManager:
     """이미지 프리뷰, 회전, 확대/축소 등 이미지 처리 관련 기능을 관리하는 클래스"""
@@ -355,8 +356,8 @@ class ImagePreviewManager:
     def crop_preview_area(self, output_path=None):
         """현재 프리뷰 영역만 크롭하여 저장"""
         if output_path is None:
-            output_path = "resources/cropped_preview.jpg"
-            
+            output_path = get_temp_path("cropped_preview.jpg")
+                
         coords = self.get_preview_coordinates()
         if coords is None:
             print("이미지를 불러올 수 없습니다.")
@@ -433,7 +434,7 @@ class ImagePreviewManager:
         
         # 디버깅 모드일 때만 이미지 저장
         if debug_mode:
-            preview_area_image_path = "resources/preview_area.jpg"
+            preview_area_image_path = get_temp_path("preview_area.jpg")
             cv2.imwrite(preview_area_image_path, image)
             print(f"프리뷰 영역이 표시된 이미지가 저장되었습니다: {preview_area_image_path}")
         
