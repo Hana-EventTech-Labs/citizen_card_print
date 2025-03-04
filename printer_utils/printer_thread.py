@@ -35,7 +35,7 @@ class PrinterThread(QThread):
                 
             try:
                 print(self.file_name)
-                result = draw_image(device_handle, PAGE_FRONT, PANELID_COLOR, 0, 0, 413, 472, self.file_name)
+                result = draw_image(device_handle, PAGE_FRONT, PANELID_COLOR, 0, 0, 438, 438, self.file_name)
                 if result != 0:
                     self.error.emit("사진 이미지 그리기 실패")
                     return

@@ -47,11 +47,11 @@ def capture_and_save_photo(camera, save_path="resources/captured_image.jpg", x=0
     frame = get_frame(camera)
     if frame is not None:
                  
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        # timestamp = time.strftime("%Y%m%d_%H%M%S")
         # 파일 이름과 경로 분리
         dir_path = os.path.dirname(save_path)
         file_name = os.path.basename(save_path)
-        file_name = file_name.replace(".jpg", f"_{timestamp}.jpg")
+        # file_name = file_name.replace(".jpg", f"_{timestamp}.jpg")
         file_path = os.path.join(dir_path, file_name)
         
         # 디렉토리가 없으면 생성

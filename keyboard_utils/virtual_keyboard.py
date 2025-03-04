@@ -182,6 +182,7 @@ class VirtualKeyboard(QWidget):
                 return
             char = key.upper() if self.is_uppercase else key.lower()
             self.input_widget.setText(current_text + char)
+            self.hangul_composer.reset()
             self.bumper = True
         
     def insert_text(self, char):

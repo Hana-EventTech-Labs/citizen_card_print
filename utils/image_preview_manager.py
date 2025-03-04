@@ -8,7 +8,7 @@ import os
 class ImagePreviewManager:
     """이미지 프리뷰, 회전, 확대/축소 등 이미지 처리 관련 기능을 관리하는 클래스"""
     
-    def __init__(self, parent_widget, preview_width=400, preview_height=457):
+    def __init__(self, parent_widget, preview_width=438, preview_height=438):
         self.parent = parent_widget
         self.preview_width = preview_width
         self.preview_height = preview_height
@@ -50,18 +50,21 @@ class ImagePreviewManager:
         self.controls_container.setFixedWidth(self.preview_width)  # preview와 같은 너비
         controls_layout = QHBoxLayout(self.controls_container)
         controls_layout.setContentsMargins(0, 0, 0, 0)
+        controls_layout.setSpacing(0)  # 간격 줄임
         
         # 줌 슬라이더 컨테이너
         zoom_container = QFrame()
         zoom_layout = QHBoxLayout(zoom_container)
         zoom_layout.setContentsMargins(0, 0, 0, 0)
-        zoom_layout.setSpacing(10)
+        zoom_layout.setSpacing(0)  # 간격 줄임
         
         zoom_label = QLabel("확대/축소")
+        zoom_label.setFixedWidth(64)  # 라벨 너비 고정
         zoom_label.setStyleSheet("color: #333; font-size: 13px;")
+        
         self.zoom_slider = QSlider(Qt.Orientation.Horizontal)
-        self.zoom_slider.setRange(20, 100)
-        self.zoom_slider.setValue(40)
+        self.zoom_slider.setRange(15, 55)
+        self.zoom_slider.setValue(24)
         self.zoom_slider.setFixedWidth(200)  # 슬라이더 너비 고정
         self.zoom_slider.valueChanged.connect(self.update_preview)
         self.zoom_slider.setStyleSheet("""
@@ -76,13 +79,10 @@ class ImagePreviewManager:
                 border-radius: 8px;
             }
         """)
-        
-        zoom_layout.addWidget(zoom_label)
-        zoom_layout.addWidget(self.zoom_slider)
-        
+
         rotate_btn = QPushButton("회전")
         rotate_btn.clicked.connect(self.rotate_image)
-        rotate_btn.setFixedWidth(80)  # 버튼 너비 고정
+        rotate_btn.setFixedWidth(72)  # 버튼 너비 고정
         rotate_btn.setStyleSheet("""
             QPushButton {
                 background-color: #5B9279;
@@ -97,9 +97,12 @@ class ImagePreviewManager:
             }
         """)
         
+        zoom_layout.addWidget(zoom_label)
+        zoom_layout.addWidget(self.zoom_slider)
+        zoom_layout.addWidget(rotate_btn)
+
         controls_layout.addWidget(zoom_container)
-        controls_layout.addWidget(rotate_btn)
-    
+
     def set_image_path(self, image_path):
         """이미지 경로 설정"""
         self.captured_image_path = image_path
@@ -230,7 +233,7 @@ class ImagePreviewManager:
     def reset(self):
         """프리뷰 상태 초기화"""
         self.rotation_angle = 0
-        self.zoom_slider.setValue(40)
+        self.zoom_slider.setValue(24)
         self.image_position = {"x": 0, "y": 0}
         self.update_preview()
     
@@ -394,6 +397,7 @@ class ImagePreviewManager:
         return {
             "cropped_image": cropped_image,
             "output_path": output_path,
+            "original_path": image_path,  # 원본 이미지 경로 추가
             "coordinates": coords
         }
     

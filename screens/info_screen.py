@@ -2,6 +2,8 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget, QPushButton, QLabel, QVBoxLayout, QFrame, QHBoxLayout, QLineEdit
 from PySide6.QtCore import QCoreApplication, Qt
 import os
+from datetime import datetime
+from calendar import monthrange
 
 # 분리된 모듈 임포트
 from utils.image_preview_manager import ImagePreviewManager
@@ -37,9 +39,9 @@ class InfoScreen(QWidget):
 
         main_container = QFrame(self)
         main_container.setStyleSheet("background: transparent;")
-        main_container.setFixedSize(900, 600)  # 전체 컨테이너 크기
+        main_container.setFixedSize(950, 600)  # 전체 컨테이너 크기
         main_container.move(
-            (1920 - 900) // 2,
+            (1920 - 950) // 2,
             50
         )
 
@@ -93,6 +95,7 @@ class InfoScreen(QWidget):
         self.birth_input.setFixedHeight(80)
         self.birth_input.setStyleSheet(input_style)
         self.birth_input.setObjectName("birth_input")  # 객체 이름 설정
+        self.birth_input.textChanged.connect(self.validate_birth_input)  # 텍스트 변경 시 검증
         
         # 버튼 컨테이너
         button_container = QFrame()
@@ -218,6 +221,14 @@ class InfoScreen(QWidget):
         if hasattr(self.stack.parent(), 'photo_screen') and hasattr(self.stack.parent().photo_screen, 'webcam'):
             self.stack.parent().photo_screen.webcam.reset_countdown()
             
+        # 원본 이미지 삭제
+        try:
+            if hasattr(self, 'captured_image_path') and os.path.exists(self.captured_image_path):
+                os.remove(self.captured_image_path)
+                print(f"재촬영: 원본 이미지가 삭제되었습니다: {self.captured_image_path}")
+        except Exception as e:
+            print(f"재촬영: 원본 이미지 삭제 중 오류 발생: {e}")
+            
         # PhotoScreen으로 돌아가기
         self.stack.setCurrentIndex(1)
 
@@ -250,6 +261,9 @@ class InfoScreen(QWidget):
         # 크롭된 이미지 경로
         cropped_image_path = crop_result["output_path"]
         
+        # 원본 이미지 경로 저장
+        self.original_image_path = crop_result["original_path"]
+        
         # 인쇄 작업 시작 - 이름만 전달 (생년월일 제외)
         print(f"이름: {name}")
         success = self.print_manager.print_card(
@@ -262,6 +276,7 @@ class InfoScreen(QWidget):
         if success:
             # 프린트 작업 시작 후 스플래시 화면으로 돌아가기
             self.stack.setCurrentIndex(0)
+            self.reset_form()
  
     def on_printing_finished(self):
         """인쇄 완료 후 처리"""
@@ -270,3 +285,127 @@ class InfoScreen(QWidget):
             "resources/cropped_preview.jpg",
             "resources/preview_area.jpg"
         ])
+        
+        # 원본 이미지 삭제
+        try:
+            if hasattr(self, 'original_image_path') and os.path.exists(self.original_image_path):
+                os.remove(self.original_image_path)
+                print(f"원본 이미지가 삭제되었습니다: {self.original_image_path}")
+        except Exception as e:
+            print(f"원본 이미지 삭제 중 오류 발생: {e}")
+
+    def validate_birth_input(self, text):
+        """생년월일 입력값 검증"""
+        if not text:
+            return
+            
+        numbers_only = ''.join(filter(str.isdigit, text))
+        current = datetime.now()
+        
+        # 각 자릿수별 검증 함수 실행
+        numbers_only = self._validate_by_length(numbers_only, current)
+        
+        if numbers_only != text:
+            self.birth_input.setText(numbers_only)
+            self.birth_input.setCursorPosition(len(numbers_only))
+    
+    def _validate_by_length(self, numbers, current):
+        """자릿수별 유효성 검증"""
+        length = len(numbers)
+        
+        # 검증 함수 매핑
+        validators = {
+            1: self._validate_first_digit,
+            2: self._validate_second_digit,
+            3: self._validate_third_digit,
+            4: self._validate_year,
+            5: self._validate_month_first_digit,
+            6: self._validate_month,
+            7: self._validate_day_first_digit,
+            8: self._validate_full_date
+        }
+        
+        # 해당 자릿수의 검증 함수 실행
+        if length in validators:
+            numbers = validators[length](numbers, current)
+            
+        return numbers[:8]  # 8자리로 제한
+    
+    def _validate_first_digit(self, numbers, _):
+        """첫 자리는 1 또는 2만 허용"""
+        return '' if not numbers.startswith(('1', '2')) else numbers
+    
+    def _validate_second_digit(self, numbers, _):
+        """19 또는 20으로 시작하는지 검증"""
+        return numbers[0] if not numbers.startswith(('19', '20')) else numbers
+    
+    def _validate_third_digit(self, numbers, current):
+        """현재 연도의 앞 3자리보다 큰지 검증"""
+        if int(numbers) > int(str(current.year)[:3]):
+            return numbers[:2]
+        return numbers
+    
+    def _validate_year(self, numbers, current):
+        """연도 검증"""
+        year = int(numbers[:4])
+        return numbers[:3] if year > current.year else numbers
+    
+    def _validate_month_first_digit(self, numbers, current):
+        """월의 첫 자리 검증"""
+        year = int(numbers[:4])
+        if numbers[4] not in ('0', '1'):
+            return numbers[:4]
+        if year == current.year:
+            current_month = str(current.month).zfill(2)
+            if int(numbers[4]) > int(current_month[0]):
+                return numbers[:4]
+        return numbers
+    
+    def _validate_month(self, numbers, current):
+        """월 전체 검증"""
+        year = int(numbers[:4])
+        month = int(numbers[4:6])
+        
+        if month < 1 or month > 12:
+            return numbers[:5]
+        if year == current.year and month > current.month:
+            return numbers[:5]
+        return numbers
+    
+    def _validate_day_first_digit(self, numbers, current):
+        """일의 첫 자리 검증"""
+        year = int(numbers[:4])
+        month = int(numbers[4:6])
+        
+        if not numbers[6].isdigit():
+            return numbers[:6]
+            
+        if month == 2 and numbers[6] not in ('0', '1', '2'):
+            return numbers[:6]
+        if month != 2 and numbers[6] not in ('0', '1', '2', '3'):
+            return numbers[:6]
+            
+        if year == current.year and month == current.month:
+            current_day = str(current.day).zfill(2)
+            if int(numbers[6]) > int(current_day[0]):
+                return numbers[:6]
+        return numbers
+    
+    def _validate_full_date(self, numbers, current):
+        """전체 날짜 검증"""
+        try:
+            year = int(numbers[:4])
+            month = int(numbers[4:6])
+            day = int(numbers[6:8])
+            
+            _, last_day = monthrange(year, month)
+            
+            if year == current.year and month == current.month:
+                if day > current.day:
+                    return numbers[:7]
+            elif day < 1 or day > last_day:
+                return numbers[:7]
+                
+            return numbers
+        except ValueError:
+            return numbers[:7]

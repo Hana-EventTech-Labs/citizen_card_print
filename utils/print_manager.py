@@ -47,19 +47,25 @@ class CardPrinterThread(QThread):
                 # 작업 취소 확인
                 if self.is_canceled:
                     return
+                
+                base_result = draw_image(device_handle, PAGE_FRONT, PANELID_COLOR,
+                                          0, 0, 635, 1027, "gurye_base_card.jpg")
+                if base_result != 0:
+                    self.error.emit("배경 이미지 그리기 실패")
+                    return
                     
                 # 4. 이미지 그리기
-                # 카드 크기: 58mm x 90mm (686px x 1063px @ 300 DPI)
-                card_width = 686  # 58mm
-                card_height = 1063  # 90mm
+                # 카드 크기: 58mm x 90mm (스마트 프린터 기본 설정 635px x 1027px @ 300 DPI)
+                card_width = 635    # 58mm
+                card_height = 1027  # 90mm
                 
-                # 이미지 크기: 35mm x 40mm
-                image_width = 413  # 35mm @ 300 DPI
-                image_height = 472  # 40mm @ 300 DPI
+                # 이미지 크기: 40mm x 40mm
+                image_width = 438  # 40mm @ 300 DPI
+                image_height = 438  # 40mm @ 300 DPI
                 
                 # 이미지 위치 계산 (가로 중앙 정렬)
                 image_x = (card_width - image_width) // 2  # 카드 중앙 정렬
-                image_y = 150  # 상단에서 아래로 적절한 위치
+                image_y = 250  # 상단에서 아래로 적절한 위치
                 
                 # 이미지 그리기
                 result = draw_image(device_handle, PAGE_FRONT, PANELID_COLOR, 
@@ -77,27 +83,28 @@ class CardPrinterThread(QThread):
                 # 5. 텍스트 그리기 (중앙 정렬)
                 # 폰트 설정
                 font_name = "맑은 고딕"  # 한글 지원 폰트
-                font_size = 36  # 적절한 크기
+                font_size = 16  # 적절한 크기
                 
                 # 텍스트 위치 계산 (가로 중앙, 이미지 아래)
                 # 참고: draw_text 함수는 텍스트를 가로 중앙에 배치하는 옵션이 없음
                 # 텍스트 너비를 대략 추정하여 위치 조정
                 # 한글은 문자당 약 font_size 픽셀의 너비 가정
-                text_width = len(self.name) * font_size  # 대략적인 텍스트 너비
-                text_x = (card_width - text_width) // 2  # 텍스트 시작 x 좌표
+                text_width = 438  # 대략적인 텍스트 너비
+                text_height = 100
+                text_x = image_x
                 text_y = image_y + image_height + 50  # 이미지 아래 여백
                 
                 # 이름 그리기
-                name_result = draw_text(device_handle, PAGE_FRONT, PANELID_COLOR,
-                                      text_x, text_y, font_name, font_size, 0, 
-                                      self.name)
+                name_result = draw_text2(device_handle, PAGE_FRONT, PANELID_COLOR,
+                                      text_x, text_y, text_width, text_height, font_name, font_size, 0, 0x00,
+                                      0x000000, self.name, 0, 0x01, 0)
                                       
                 if name_result != 0:
                     # 기본 폰트로 재시도
                     font_name = "Arial"
-                    name_result = draw_text(device_handle, PAGE_FRONT, PANELID_COLOR,
-                                          text_x, text_y, font_name, font_size, 0, 
-                                          self.name)
+                    name_result = draw_text2(device_handle, PAGE_FRONT, PANELID_COLOR,
+                                      text_x, text_y, text_width, text_height, font_name, font_size, 0x00,
+                                      0x000000, self.name, 0, 0x01, 0)
                     if name_result != 0:
                         self.error.emit("이름 텍스트 그리기 실패")
                 
@@ -121,12 +128,12 @@ class CardPrinterThread(QThread):
                     return
                 
                 # 7. 이미지 인쇄
-                result = print_image(device_handle)
-                if result != 0:
-                    self.error.emit("이미지 인쇄 실패")
-                    return
+                # result = print_image(device_handle)
+                # if result != 0:
+                #     self.error.emit("이미지 인쇄 실패")
+                #     return
                     
-                self.finished.emit()
+                # self.finished.emit()
             finally:
                 # 8. 장치 닫기 (항상 실행)
                 close_device(device_handle)
@@ -176,7 +183,7 @@ class PrintManager:
         """인쇄 미리보기 표시"""
         if image:
             # 미리보기 이미지 표시 (필요한 경우 구현)
-            # image.show()  # PIL Image 객체인 경우
+            image.show()  # PIL Image 객체인 경우
             pass
     
     def cancel_printing(self):
