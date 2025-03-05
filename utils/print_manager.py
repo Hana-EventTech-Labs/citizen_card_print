@@ -128,12 +128,12 @@ class CardPrinterThread(QThread):
                     return
                 
                 # 7. 이미지 인쇄
-                # result = print_image(device_handle)
-                # if result != 0:
-                #     self.error.emit("이미지 인쇄 실패")
-                #     return
+                result = print_image(device_handle)
+                if result != 0:
+                    self.error.emit("이미지 인쇄 실패")
+                    return
                     
-                # self.finished.emit()
+                self.finished.emit()
             finally:
                 # 8. 장치 닫기 (항상 실행)
                 close_device(device_handle)
