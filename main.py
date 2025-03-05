@@ -17,6 +17,15 @@ class KioskApp(QMainWindow):
         self.setFixedSize(*self.screen_size)
         self.showFullScreen()
 
+        if getattr(sys, 'frozen', False):
+            # 실행파일로 실행한 경우,해당 파일을 보관한 디렉토리의 full path를 취득
+            program_directory = os.path.dirname(os.path.abspath(sys.executable))
+            program_directory = os.path.join(program_directory, "_internal")
+        else:
+            # 파이썬 파일로 실행한 경우,해당 파일을 보관한 디렉토리의 full path를 취득
+            program_directory = os.path.dirname(os.path.abspath(__file__))
+        os.chdir(program_directory)
+
         self.stack = QStackedWidget()
         self.setupStack()
 
