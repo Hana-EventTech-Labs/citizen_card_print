@@ -70,13 +70,14 @@ class CSVValidator:
                 writer.writerows(records)  # 모든 레코드
             
             print(f"✅ 새 발급 기록 추가 완료: {name}, {birth_date}, {issue_time}")
-            return True
+            return True, None
             
         except Exception as e:
             import traceback
-            print(f"발급 기록 추가 중 오류 발생: {e}")
+            error_message = f"발급 기록 추가 중 오류 발생: {e}"
+            print(error_message)
             print(traceback.format_exc())
-            return False
+            return False, error_message
     
     def _read_records(self):
         """CSV 파일에서 모든 레코드 읽기"""
