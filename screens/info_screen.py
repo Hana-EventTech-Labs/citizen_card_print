@@ -9,6 +9,8 @@ from calendar import monthrange
 from utils.image_preview_manager import ImagePreviewManager
 from utils.keyboard_manager import KeyboardManager
 from utils.print_manager import PrintManager
+from utils.dialog_manager import MessageDialog
+from excel_utils.manager import ExcelManager
 
 class InfoScreen(QWidget):
     """정보 입력 및 이미지 편집 화면"""
@@ -22,6 +24,7 @@ class InfoScreen(QWidget):
         # 모듈화된 매니저 클래스 초기화
         self.image_manager = ImagePreviewManager(self)
         self.print_manager = PrintManager()
+        self.excel_manager = ExcelManager(self)  # 엑셀 매니저 추가
         
         # UI 초기화 - 키보드 매니저는 입력 필드 생성 후 초기화
         self.setupUI()
@@ -239,11 +242,28 @@ class InfoScreen(QWidget):
         birth = self.birth_input.text().strip()
         
         if not name:
-            print("이름을 입력해주세요.")
+             # 이름이 없는 경우 메시지 표시
+            dialog = MessageDialog(
+                parent=self,
+                title="입력 오류",
+                message="이름을 입력해주세요."
+            )
+            dialog.exec()
             return
             
         if not birth or len(birth) != 8 or not birth.isdigit():
-            print("생년월일을 8자리 숫자로 입력해주세요. (예: 19901231)")
+            # 생년월일 형식이 맞지 않는 경우 메시지 표시
+            dialog = MessageDialog(
+                parent=self,
+                title="입력 오류",
+                message="생년월일을 8자리 숫자로 입력해주세요. (예: 19901231)"
+            )
+            dialog.exec()
+            return
+        
+        # 엑셀 검증 진행
+        if not self.excel_manager.validate_user(name, birth):
+            # 검증 실패 또는 사용자가 취소 선택
             return
             
         # 키보드 숨기기
@@ -255,7 +275,13 @@ class InfoScreen(QWidget):
         # 프리뷰 영역 크롭
         crop_result = self.image_manager.crop_preview_area()
         if crop_result is None:
-            print("이미지 처리 중 오류가 발생했습니다.")
+            # 이미지 처리 실패 시 메시지 표시
+            dialog = MessageDialog(
+                parent=self,
+                title="이미지 처리 오류",
+                message="이미지 처리 중 오류가 발생했습니다."
+            )
+            dialog.exec()
             return
             
         # 크롭된 이미지 경로
@@ -263,9 +289,20 @@ class InfoScreen(QWidget):
         
         # 원본 이미지 경로 저장
         self.original_image_path = crop_result["original_path"]
+        # 엑셀에 카드 발급 정보 등록
+        success = self.excel_manager.register_card(name, birth)
         
-        # 인쇄 작업 시작 - 이름만 전달 (생년월일 제외)
-        print(f"이름: {name}")
+        if not success:
+            # 등록 실패 시 메시지 표시
+            dialog = MessageDialog(
+                parent=self,
+                title="등록 오류",
+                message="카드 발급 정보 등록 중 오류가 발생했습니다."
+            )
+            dialog.exec()
+            return
+        
+        # 인쇄 작업 시작 - 이름만 전달
         success = self.print_manager.print_card(
             cropped_image_path, 
             name,
@@ -277,6 +314,15 @@ class InfoScreen(QWidget):
             # 프린트 작업 시작 후 스플래시 화면으로 돌아가기
             self.stack.setCurrentIndex(0)
             self.reset_form()
+  
+            # 발급 완료 메시지 표시
+            dialog = MessageDialog(
+                parent=self.stack.parent(),
+                title="발급 완료",
+                message="카드 발급이 완료되었습니다.",
+                auto_close_ms=3000  # 3초 후 자동 닫기
+            )
+            dialog.exec()
  
     def on_printing_finished(self):
         """인쇄 완료 후 처리"""
