@@ -46,8 +46,8 @@ class ValidationDialog(QDialog):
         
         # 취소 버튼 (경고인 경우만 표시)
         if is_warning:
-            self.cancel_button = QPushButton("취소")
-            self.cancel_button.setFixedSize(120, 50)
+            self.cancel_button = QPushButton("초기 화면으로 돌아가기")
+            self.cancel_button.setFixedSize(220, 50)  # 텍스트가 길어서 너비 증가
             self.cancel_button.setFont(QFont("맑은 고딕", 14))
             self.cancel_button.setStyleSheet("""
                 QPushButton {

@@ -237,12 +237,12 @@ class InfoScreen(QWidget):
 
     def process_and_print(self):
         """발급 버튼 클릭 시 호출되는 메서드"""
-        # 이름과 생년월일 유효성 검사 (생년월일은 저장만 하고 출력하지 않음)
+        # 이름과 생년월일 유효성 검사
         name = self.name_input.text().strip()
         birth = self.birth_input.text().strip()
         
         if not name:
-             # 이름이 없는 경우 메시지 표시
+            # 이름이 없는 경우 메시지 표시
             dialog = MessageDialog(
                 parent=self,
                 title="입력 오류",
@@ -262,10 +262,21 @@ class InfoScreen(QWidget):
             return
         
         # 엑셀 검증 진행
-        if not self.excel_manager.validate_user(name, birth):
-            # 검증 실패 또는 사용자가 취소 선택
+        validation_result = self.excel_manager.validate_user(name, birth)
+        
+        # 검증 결과에 따른 처리
+        if validation_result == 1:
+            # 중복 사용자이고 "확인" 버튼을 눌렀을 때 - 현재 화면 유지, 발급 중단
             return
-            
+        elif validation_result == 2:
+            # "초기 화면으로 돌아가기" 버튼을 눌렀을 때
+            self.reset_form()  # 폼 초기화
+            self.keyboard_manager.hide_keyboard()  # 키보드 숨기기
+            self.stack.setCurrentIndex(0)  # 스플래시 화면으로 이동
+            return
+        
+        # 검증 통과 (신규 사용자) - 계속 진행
+        
         # 키보드 숨기기
         self.keyboard_manager.hide_keyboard()
             
@@ -289,17 +300,13 @@ class InfoScreen(QWidget):
         
         # 원본 이미지 경로 저장
         self.original_image_path = crop_result["original_path"]
+        
         # 엑셀에 카드 발급 정보 등록
         success = self.excel_manager.register_card(name, birth)
         
         if not success:
-            # 등록 실패 시 메시지 표시
-            dialog = MessageDialog(
-                parent=self,
-                title="등록 오류",
-                message="카드 발급 정보 등록 중 오류가 발생했습니다."
-            )
-            dialog.exec()
+            # 키보드 다시 표시 (오류 발생 시)
+            self.keyboard_manager.show_keyboard()
             return
         
         # 인쇄 작업 시작 - 이름만 전달
@@ -314,7 +321,7 @@ class InfoScreen(QWidget):
             # 프린트 작업 시작 후 스플래시 화면으로 돌아가기
             self.stack.setCurrentIndex(0)
             self.reset_form()
-  
+            
             # 발급 완료 메시지 표시
             dialog = MessageDialog(
                 parent=self.stack.parent(),
@@ -323,7 +330,7 @@ class InfoScreen(QWidget):
                 auto_close_ms=3000  # 3초 후 자동 닫기
             )
             dialog.exec()
- 
+            
     def on_printing_finished(self):
         """인쇄 완료 후 처리"""
         # 임시 이미지 파일 정리
