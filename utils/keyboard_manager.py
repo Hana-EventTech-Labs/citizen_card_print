@@ -19,7 +19,7 @@ class KeyboardManager:
         
         # 키보드 위치 및 크기 설정 - 화면 하단에 위치하도록 설정
         keyboard_width = 1200
-        keyboard_height = 350
+        keyboard_height = 450
         self.virtual_keyboard.setFixedSize(keyboard_width, keyboard_height)
         self.virtual_keyboard.move(
             (self.screen_size[0] - keyboard_width) // 2,
@@ -69,12 +69,7 @@ class KeyboardManager:
         input_field.setFocus()
         input_field.setCursorPosition(len(input_field.text()))
         
-        # 입력 필드 유형에 따라 키보드 모드 변경
-        # 예: 생년월일 입력 필드는 숫자 모드로 변경
-        if input_field.objectName() == "birth_input":
-            self.virtual_keyboard.is_hangul = False
-        else:
-            self.virtual_keyboard.is_hangul = True
+        self.virtual_keyboard.is_hangul = True
         
         # 키보드 레이블 업데이트
         self.virtual_keyboard.update_keyboard_labels()
